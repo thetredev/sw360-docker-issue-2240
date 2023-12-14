@@ -1,0 +1,62 @@
+version: '3.7'
+
+services:
+  database:
+    image: 'postgres:14'
+    container_name: sw360_database
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: liferay
+      POSTGRES_PASSWORD: liferay
+      POSTGRES_DB: lportal
+    logging:
+      options:
+        max-size: 10m
+        max-file: "2"
+    volumes:
+      - ./database:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready --dbname $$POSTGRES_DB --username $$POSTGRES_USER" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  couchdb:
+    image: couchdb:3.3.3
+    container_name: sw360_couchdb
+    restart: unless-stopped
+    environment:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: password
+      COUCHDB_CREATE_DATABASE: "yes"
+    volumes:
+      - ./couchdb:/opt/couchdb/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail -s http://sw360_couchdb:5984/_up" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  application:
+    image: ghcr.io/eclipse-sw360/sw360:18.0.0-SNAPSHOT
+    restart: unless-stopped
+    container_name: sw360_application
+    environment:
+      COUCHDB_HOST: sw360_couchdb
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: password
+    depends_on:
+      database:
+        condition: service_healthy
+      couchdb:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./config/app/couchdb-lucene.ini:/app/sw360/tomcat/webapps/couchdb-lucene/WEB-INF/classes/couchdb-lucene.ini:ro
+      - ./config/app/portal-ext.properties:/app/sw360/portal-ext.properties:ro
+      - ./config/etc:/etc/sw360
+      - ./documents:/app/sw360/data/document_library
+      - ./changelog:/var/log/sw360changelog
+    ports:
+      - 8080:8080
