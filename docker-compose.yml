@@ -38,7 +38,8 @@ services:
       retries: 5
 
   application:
-    image: ghcr.io/eclipse-sw360/sw360:18.0.0
+    #image: ghcr.io/eclipse-sw360/sw360:18.0.0
+    image: ghcr.io/thetredev/sw360-docker-issue-2240:18-development # locally built image because the upstream one doesn't work
     restart: unless-stopped
     container_name: sw360_application
     environment:
