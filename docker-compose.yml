@@ -28,7 +28,7 @@ services:
     environment:
       COUCHDB_USER: admin
       COUCHDB_PASSWORD: password
-      COUCHDB_CREATE_DATABASE: "yes"
+      COUCHDB_CREATE_DATABASE: yes
     volumes:
       - ./couchdb:/opt/couchdb/data
     healthcheck:
